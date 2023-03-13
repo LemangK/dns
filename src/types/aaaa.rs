@@ -51,6 +51,12 @@ impl RR for AAAA {
     }
 
     fn unpack(h: RecourseRecordHdr, cur: &mut Cursor<&[u8]>) -> Result<Self::Item> {
+        if h.rd_length == 0 {
+            return Ok(AAAA {
+                hdr: h,
+                aaaa: Ipv6Addr::UNSPECIFIED,
+            })
+        }
         let mut s = [0u8; 16];
         cur.read_exact(&mut s[..])?;
         Ok(Self {

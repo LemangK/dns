@@ -37,6 +37,12 @@ impl RR for RFC3597 {
     }
 
     fn unpack(h: RecourseRecordHdr, cur: &mut Cursor<&[u8]>) -> Result<Self::Item> {
+        if h.rd_length == 0 {
+            return Ok(Self {
+                hdr: h,
+                data: "".into(),
+            })
+        }
         let mut data = vec![0u8; h.rd_length as usize];
         cur.read_exact(&mut data[..])?;
         Ok(Self {

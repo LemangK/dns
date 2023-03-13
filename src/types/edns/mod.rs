@@ -42,6 +42,12 @@ impl RR for Opt {
     }
 
     fn unpack(h: RecourseRecordHdr, cur: &mut Cursor<&[u8]>) -> Result<Self::Item> {
+        if h.rd_length == 0 {
+            return Ok(Self {
+                hdr: h,
+                option: vec![],
+            })
+        }
         let mut options = Vec::new();
         let mut off: usize = cur.position() as usize;
 

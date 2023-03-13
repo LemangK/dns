@@ -56,6 +56,12 @@ impl RR for CNAME {
     }
 
     fn unpack(h: RecourseRecordHdr, cur: &mut Cursor<&[u8]>) -> Result<Self::Item> {
+        if h.rd_length == 0 {
+            return Ok(Self {
+                hdr: h,
+                target: "".into(),
+            })
+        }
         let name = util::unpack_domain_name_cur(cur)?;
         Ok(Self {
             hdr: h,

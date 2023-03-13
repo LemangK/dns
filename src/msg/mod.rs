@@ -31,8 +31,8 @@ pub struct PktMsgHeader {
     pub bits: u16,
     pub question_count: u16,
     pub answer_count: u16,
-    pub ns_count: u16,
     pub authority_count: u16,
+    pub additional_count: u16,
 }
 
 impl PktMsgHeader {
@@ -41,8 +41,8 @@ impl PktMsgHeader {
         buf.put_u16(self.bits);
         buf.put_u16(self.question_count);
         buf.put_u16(self.answer_count);
-        buf.put_u16(self.ns_count);
         buf.put_u16(self.authority_count);
+        buf.put_u16(self.additional_count);
         Ok(())
     }
 
@@ -52,8 +52,8 @@ impl PktMsgHeader {
         ret.bits = cur.read_u16::<BigEndian>()?;
         ret.question_count = cur.read_u16::<BigEndian>()?;
         ret.answer_count = cur.read_u16::<BigEndian>()?;
-        ret.ns_count = cur.read_u16::<BigEndian>()?;
         ret.authority_count = cur.read_u16::<BigEndian>()?;
+        ret.additional_count = cur.read_u16::<BigEndian>()?;
         Ok(ret)
     }
 }
@@ -465,7 +465,7 @@ impl Msg {
             let mut hdr: PktMsgHeader = self.hdr.into();
             hdr.question_count = self.question.len() as u16;
             hdr.answer_count = self.answer.len() as u16;
-            hdr.ns_count = self.authority.len() as u16;
+            hdr.additional_count = self.authority.len() as u16;
             hdr.authority_count = self.additional.len() as u16;
             hdr.pack(buf)?;
         }
@@ -582,8 +582,8 @@ impl Msg {
             self.question.push(Question::unpack(cur)?);
         }
         unpack_slice(hdr.answer_count as usize, self.answer.as_mut(), cur)?;
-        unpack_slice(hdr.ns_count as usize, self.authority.as_mut(), cur)?;
-        unpack_slice(hdr.authority_count as usize, self.additional.as_mut(), cur)?;
+        unpack_slice(hdr.authority_count as usize, self.authority.as_mut(), cur)?;
+        unpack_slice(hdr.additional_count as usize, self.additional.as_mut(), cur)?;
 
         if let Some(opt) = self.is_edns0() {
             self.hdr.response_code |= opt.extended_r_code();
