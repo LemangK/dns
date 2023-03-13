@@ -92,7 +92,11 @@ impl Opt {
     }
 
     pub fn set_extended_r_code(&mut self, v: u16) {
-        self.hdr.ttl = self.hdr.ttl & 0x00FFFFFF | ((v >> 4) as u32) << 24
+        self.hdr.ttl = self.op_extended_r_code(v)
+    }
+
+    pub fn op_extended_r_code(&self, v: u16) -> u32 {
+        return self.hdr.ttl & 0x00FFFFFF | ((v >> 4) as u32) << 24
     }
 
     pub fn set_do(&mut self, d: &[bool]) {

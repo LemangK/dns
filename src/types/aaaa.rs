@@ -4,8 +4,8 @@ use std::io::{Cursor, Read};
 use std::net::Ipv6Addr;
 use bytes::{BytesMut};
 use crate::msg::{RR, RecourseRecordHdr};
-use crate::types::RecourseRecord;
-use crate::{Result, util};
+use crate::types::{RecourseRecord, TYPE_AAAA};
+use crate::{DomainString, Result, util};
 
 /// RFC 3596.
 #[derive(Debug, Clone)]
@@ -15,11 +15,14 @@ pub struct AAAA {
 }
 
 impl AAAA {
-    pub fn new(h: RecourseRecordHdr, aaaa: Ipv6Addr) -> Self {
+    pub fn new(name: DomainString, class: u16, ttl: u32, aaaa: Ipv6Addr) -> Self {
         Self {
             hdr: RecourseRecordHdr {
+                name,
+                typ: TYPE_AAAA,
+                class,
+                ttl,
                 rd_length: 16,
-                ..h
             },
             aaaa,
         }

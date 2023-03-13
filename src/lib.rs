@@ -1,4 +1,5 @@
 use std::io;
+use crate::msg::{PktMsgHeader, Question};
 
 pub mod msg;
 mod util;
@@ -61,12 +62,29 @@ pub fn clear_full_domain(s: &str) -> &str {
     }
 }
 
+pub fn is_dns(data: &[u8]) -> bool {
+    if data.len() < 12 {
+        return false;
+    }
+    let mut cur = io::Cursor::new(data);
+    let Ok(hdr) = PktMsgHeader::unpack(&mut cur) else { return false; };
+    if hdr.question_count == 0 {
+        return false;
+    }
+    for _ in 0..hdr.question_count {
+        if let Err(_) = Question::skip(&mut cur) {
+            return false;
+        }
+    }
+    true
+}
+
 #[cfg(test)]
 mod test {
     use std::net::Ipv4Addr;
     use std::time::Instant;
     use bytes::BytesMut;
-    use crate::{clear_full_domain, full_domain, types};
+    use crate::{clear_full_domain, full_domain, is_dns, types};
     use crate::types::{EDNS0, RecourseRecord};
     use crate::types::edns::edns0;
     use super::msg::*;
@@ -156,5 +174,6 @@ mod test {
 
         println!("msg: {}", msg);
         println!("msg2: {:?}", msg2);
+        println!("is_udp_dns: {:?}", is_dns(&data[..14]));
     }
 }

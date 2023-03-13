@@ -8,6 +8,7 @@ pub mod rfc3597;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::io::Cursor;
+use std::net::IpAddr;
 use bytes::BytesMut;
 pub use a::A;
 pub use aaaa::AAAA;
@@ -15,7 +16,7 @@ pub use cname::CNAME;
 pub use edns::{EDNS0, Opt};
 pub use rfc3597::RFC3597;
 use crate::msg::{RecourseRecordHdr, RR};
-use crate::Result;
+use crate::{DomainString, Result};
 
 #[derive(Debug, Clone)]
 pub enum RecourseRecord {
@@ -24,6 +25,15 @@ pub enum RecourseRecord {
     CNAME(CNAME),
     Opt(Opt),
     Unknown(RFC3597),
+}
+
+impl RecourseRecord {
+    pub fn new_ip(name: DomainString, class: u16, ttl: u32, ip: IpAddr) -> Self {
+        match ip {
+            IpAddr::V4(val) => A::new(name, class, ttl, val).into(),
+            IpAddr::V6(val) => AAAA::new(name, class, ttl, val).into()
+        }
+    }
 }
 
 impl Display for RecourseRecord {

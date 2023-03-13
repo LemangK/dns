@@ -362,7 +362,7 @@ impl RRs {
 }
 
 /// DNS Message
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Msg {
     pub hdr: MsgHdr,
     pub question: Vec<Question>,
@@ -394,6 +394,12 @@ impl Msg {
     pub fn set_response_code(&mut self, request: &Msg, response_code: u16) -> &mut Self {
         self.set_reply(request);
         self.hdr.response_code = response_code;
+        self
+    }
+
+    pub fn as_reply(&mut self) -> &mut Self {
+        self.hdr.response = true;
+        self.hdr.response_code = types::RCODE_SUCCESS;
         self
     }
 
@@ -440,7 +446,7 @@ impl Msg {
         self.question.len() > 1 || self.answer.len() > 0 || self.authority.len() > 0 || self.additional.len() > 0
     }
 
-    pub fn pack(&mut self, buf: &mut BytesMut) -> Result<()> {
+    pub fn pack(&self, buf: &mut BytesMut) -> Result<()> {
         // if self.compress && self.is_compressible() {
         //     // todo: compress
         // }
@@ -449,8 +455,7 @@ impl Msg {
         }
 
         let r_code = self.hdr.response_code;
-        if let Some(opt) = self.get_edns0_mut() {
-            opt.set_extended_r_code(r_code);
+        if let Some(_) = self.is_edns0() {
         } else if r_code > 0xF {
             return Err(Error::BadExtendedResponseCode);
         }
@@ -477,7 +482,13 @@ impl Msg {
             item.pack(buf)?;
         }
         for item in &self.additional {
-            item.header().pack(buf)?;
+            if let RecourseRecord::Opt(opt) = &item {
+                let mut new_opt = opt.hdr.clone();
+                new_opt.ttl = opt.op_extended_r_code(r_code);
+                new_opt.pack(buf)?;
+            } else {
+                item.header().pack(buf)?;
+            }
             item.pack(buf)?;
         }
 
@@ -550,6 +561,12 @@ impl Msg {
             return Some(val);
         }
         return None;
+    }
+
+    pub fn to_buf(&self) -> Result<BytesMut> {
+        let mut buf = BytesMut::new();
+        self.pack(&mut buf)?;
+        Ok(buf)
     }
 
     fn __unpack(&mut self, hdr: PktMsgHeader, cur: &mut Cursor<&[u8]>) -> Result<()> {
