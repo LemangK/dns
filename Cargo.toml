@@ -1,6 +1,6 @@
 [package]
 name = "dns"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 authors = ["cuti <cuti0738@gmail.com>"]
 license = "MIT"

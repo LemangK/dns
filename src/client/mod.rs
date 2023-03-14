@@ -46,16 +46,20 @@ pub async fn lookup_host(
                 q_type: typ,
                 q_class: types::CLASS_INET,
             });
-            msg.to_buf_with(buf)?;
+            if let Err(err) = msg.to_buf_with(buf) {
+                return Err(err.into())
+            }
         }
 
         socket.send_to(buf.as_ref(), ns).await?;
         buf.resize(BUF_SIZE, 0);
         let n = socket.recv(&mut buf[..]).await?;
 
-        let res = Msg::unpack_answer(&buf[..n])?.ips();
-        if !res.is_empty() {
-            ips.extend(res);
+        if let Some(an) = Msg::unpack_answer(&buf[..n]) {
+            let res = an.ips();
+            if !res.is_empty() {
+                ips.extend(res);
+            }
         }
         Ok(())
     }

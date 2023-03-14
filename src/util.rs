@@ -1,4 +1,6 @@
-use std::fmt::{Formatter, Write};
+#![allow(dead_code)]
+
+use std::fmt::{Formatter};
 use std::{fmt, io};
 use std::io::Cursor;
 use bytes::{BufMut, BytesMut};

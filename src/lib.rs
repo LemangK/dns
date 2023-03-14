@@ -49,6 +49,15 @@ impl From<io::Error> for Error {
     }
 }
 
+impl Into<io::Error> for Error {
+    fn into(self) -> io::Error {
+        match self {
+            Error::Io(val) => val,
+            _ => io::Error::new(io::ErrorKind::Other, format!("{:?}", self))
+        }
+    }
+}
+
 pub fn full_domain<S: Into<String>>(s: S) -> DomainString {
     let mut s = s.into();
     if !s.ends_with('.') {
