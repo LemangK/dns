@@ -1,4 +1,5 @@
 mod label;
+pub use label::Labels;
 
 use std::{fmt, io};
 use std::fmt::{Display, Formatter, Write};
@@ -217,6 +218,14 @@ impl Display for Question {
 }
 
 impl Question {
+    pub fn is_a(&self) -> bool {
+        self.q_type == types::TYPE_A
+    }
+
+    pub fn is_aaaa(&self) -> bool {
+        self.q_type == types::TYPE_AAAA
+    }
+
     pub fn pack(&self, buf: &mut BytesMut) -> Result<()> {
         util::pack_domain_name(&self.name, buf)?;
         buf.put_u16(self.q_type);
@@ -405,7 +414,7 @@ impl Msg {
 
     pub fn set_reply(&mut self, request: &Msg) -> &mut Self {
         self.hdr.id = request.hdr.id;
-        self.hdr.response = request.hdr.response;
+        self.hdr.response = true;
         self.hdr.op_code = request.hdr.op_code;
         if self.hdr.op_code == types::OPCODE_QUERY {
             self.hdr.recursion_desired = request.hdr.recursion_desired;
@@ -446,6 +455,15 @@ impl Msg {
         self.question.len() > 1 || self.answer.len() > 0 || self.authority.len() > 0 || self.additional.len() > 0
     }
 
+    pub fn has_ipv6_question(&self) -> bool {
+        for q in &self.question {
+            if q.q_type == types::TYPE_AAAA {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn pack(&self, buf: &mut BytesMut) -> Result<()> {
         // if self.compress && self.is_compressible() {
         //     // todo: compress
@@ -455,8 +473,7 @@ impl Msg {
         }
 
         let r_code = self.hdr.response_code;
-        if let Some(_) = self.is_edns0() {
-        } else if r_code > 0xF {
+        if let Some(_) = self.is_edns0() {} else if r_code > 0xF {
             return Err(Error::BadExtendedResponseCode);
         }
 
@@ -567,6 +584,11 @@ impl Msg {
         let mut buf = BytesMut::new();
         self.pack(&mut buf)?;
         Ok(buf)
+    }
+
+    pub fn to_buf_with(&self, buf: &mut BytesMut) -> Result<()> {
+        self.pack(buf)?;
+        Ok(())
     }
 
     fn __unpack(&mut self, hdr: PktMsgHeader, cur: &mut Cursor<&[u8]>) -> Result<()> {

@@ -1,9 +1,12 @@
 use std::io;
 use crate::msg::{PktMsgHeader, Question};
+pub use crate::msg::Msg;
 
-pub mod msg;
 mod util;
+pub mod client;
+pub mod msg;
 pub mod types;
+pub mod hosts;
 
 pub type DomainString = smallstr::SmallString<[u8; 24]>;
 
